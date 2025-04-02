@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Boletín Atmosférico</title>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -11,6 +12,13 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #003366;
     }
 
     #controles {
@@ -116,6 +124,10 @@
 </head>
 <body>
 
+<h1>
+  Generador de Afiches Condiciones Atmosféricas para los boletines INSIVUMEH
+</h1>
+
 <div id="controles">
   <input type="text" id="titulo" value="CONDICIONES ATMOSFÉRICAS" style="width: 300px;">
   <input type="date" id="fechaInput">
@@ -149,8 +161,6 @@ Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrí
   </textarea>
 </div>
 
-<canvas id="canvas" width="1280" height="720" style="display:none;"></canvas>
-
 <h3>Vista previa del PNG:</h3>
 <img id="preview" src="" width="640">
 
@@ -163,8 +173,6 @@ Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrí
   const selectorImagen = document.getElementById("selectorImagen");
   const sinopsis = document.getElementById("sinopsis");
   const cuerpoTexto = document.getElementById("cuerpoTexto");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
 
   function actualizarFechaTitulo(fechaStr) {
     const fecha = new Date(fechaStr + 'T00:00:00');
@@ -202,78 +210,17 @@ Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrí
   });
 
   document.getElementById("botonExportar").addEventListener("click", () => {
-    const bg = new Image();
-    bg.src = "CAD.png";
+    // Copiar los valores del textarea al contenido visible antes de exportar
+    sinopsis.textContent = sinopsis.value;
+    cuerpoTexto.textContent = cuerpoTexto.value;
 
-    const imgSat = new Image();
-    imgSat.crossOrigin = "anonymous";
-    imgSat.src = imagenSatelital.src;
+    const contenedor = document.getElementById("canvasWrapper");
 
-    let fondoListo = false;
-    let satelitalLista = false;
-
-    bg.onload = () => {
-      fondoListo = true;
-      intentarDibujar();
-    };
-
-    imgSat.onload = () => {
-      satelitalLista = true;
-      intentarDibujar();
-    };
-
-    function intentarDibujar() {
-      if (!fondoListo || !satelitalLista) return;
-
-      ctx.drawImage(bg, 0, 0, 1280, 720);
-      ctx.font = "bold 36px Arial";
-      ctx.fillStyle = "white";
-      ctx.textAlign = "center";
-      ctx.shadowColor = "black";
-      ctx.shadowBlur = 4;
-      ctx.fillText(tituloTexto.textContent, 640, 50);
-      ctx.font = "24px Arial";
-      ctx.fillText(fechaTexto.textContent, 640, 90);
-
-      ctx.shadowBlur = 0;
-      ctx.drawImage(imgSat, 40, 120, 560, imgSat.height * (560 / imgSat.width));
-
-      ctx.font = "18px Arial";
-      ctx.fillStyle = "black";
-      ctx.textAlign = "left";
-      let y = 150;
-      sinopsis.value.split('\n').forEach(p => {
-        let linea = '';
-        p.split(' ').forEach(palabra => {
-          const test = linea + palabra + ' ';
-          if (ctx.measureText(test).width > 520) {
-            ctx.fillText(linea, 700, y);
-            y += 24;
-            linea = palabra + ' ';
-          } else {
-            linea = test;
-          }
-        });
-        ctx.fillText(linea, 700, y);
-        y += 28;
-      });
-
-      cuerpoTexto.value.split('\n').forEach(p => {
-        let linea = '';
-        p.split(' ').forEach(palabra => {
-          const test = linea + palabra + ' ';
-          if (ctx.measureText(test).width > 520) {
-            ctx.fillText(linea, 700, y);
-            y += 22;
-            linea = palabra + ' ';
-          } else {
-            linea = test;
-          }
-        });
-        ctx.fillText(linea, 700, y);
-        y += 40;
-      });
-
+    html2canvas(contenedor, {
+      allowTaint: true,
+      useCORS: true,
+      scale: 2
+    }).then(canvas => {
       const imgData = canvas.toDataURL("image/png");
       document.getElementById("preview").src = imgData;
 
@@ -281,7 +228,7 @@ Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrí
       link.download = "boletin.png";
       link.href = imgData;
       link.click();
-    }
+    });
   });
 </script>
 
