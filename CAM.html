@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Boletín Atmosférico</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #controles {
+      background: #ffffff;
+      padding: 15px;
+      width: 1280px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #controles input, #controles select, #controles button {
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    #canvasWrapper {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      background-image: url('CAD.png');
+      background-size: cover;
+      background-position: center;
+      margin-top: 10px;
+    }
+
+    .editable-title {
+      position: absolute;
+      top: 30px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 36px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px black;
+    }
+
+    .editable-subtitle {
+      position: absolute;
+      top: 70px;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px black;
+    }
+
+    .imagen-satelital {
+      position: absolute;
+      top: 120px;
+      left: 40px;
+      width: 31%;
+      max-width: 560px;
+      border: 2px solid #fff;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .editable-texto {
+      position: absolute;
+      top: 120px;
+      left: 550px;
+      width: 580px;
+      height: 350px;
+      font-size: 18px;
+      background: transparent;
+      color: black;
+      border: none;
+      resize: none;
+      font-family: Arial, sans-serif;
+    }
+
+    .editable-cuerpo {
+      position: absolute;
+      top: 470px;
+      left: 550px;
+      width: 580px;
+      height: 200px;
+      font-size: 16px;
+      background: transparent;
+      color: black;
+      border: none;
+      resize: none;
+      font-family: Arial, sans-serif;
+    }
+
+    #botonExportar {
+      background: #003366;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #preview {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controles">
+  <input type="text" id="titulo" value="CONDICIONES ATMOSFÉRICAS" style="width: 300px;">
+  <input type="date" id="fechaInput">
+  <button onclick="cambiarDia(-1)">← Ayer</button>
+  <button onclick="cambiarDia(1)">Mañana →</button>
+  <select id="selectorImagen">
+    <option value="https://insivumeh.gob.gt/img/guate_truecolor.png">Truecolor</option>
+    <option value="https://insivumeh.gob.gt/img/guate_visible.png">Visible</option>
+    <option value="https://insivumeh.gob.gt/img/guate_vapor.png">Vapor de Agua</option>
+    <option value="https://insivumeh.gob.gt/img/guate_infrarrojo.png">Infrarrojo</option>
+  </select>
+  <button id="botonExportar">Exportar PNG</button>
+</div>
+
+<div id="canvasWrapper">
+  <div class="editable-title" id="tituloTexto">CONDICIONES ATMOSFÉRICAS</div>
+  <div class="editable-subtitle" id="fechaTexto">01 DE ABRIL DE 2025</div>
+
+  <img class="imagen-satelital" id="imagenSatelital" src="https://insivumeh.gob.gt/img/guate_truecolor.png">
+
+  <textarea class="editable-texto" id="sinopsis">
+SINOPSIS: Ambiente cálido y soleado, presencia de bruma en el ambiente. Pocas nubes alternando con nubosidad dispersa en la mayor parte del territorio nacional.
+
+Debido al ingreso de humedad desde el océano Pacífico y el calentamiento diurno se prevén lluvias de corta duración acompañadas de actividad eléctrica sobre Bocacosta, Occidente, Valles de Oriente y algunos sectores de Altiplano Central.
+
+Temperaturas elevadas durante el período, principalmente en las regiones al norte y sur del territorio nacional.
+  </textarea>
+
+  <textarea class="editable-cuerpo" id="cuerpoTexto">
+Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrían favorecer la ocurrencia y proliferación de incendios forestales.
+  </textarea>
+</div>
+
+<canvas id="canvas" width="1280" height="720" style="display:none;"></canvas>
+
+<h3>Vista previa del PNG:</h3>
+<img id="preview" src="" width="640">
+
+<script>
+  const tituloInput = document.getElementById("titulo");
+  const fechaInput = document.getElementById("fechaInput");
+  const tituloTexto = document.getElementById("tituloTexto");
+  const fechaTexto = document.getElementById("fechaTexto");
+  const imagenSatelital = document.getElementById("imagenSatelital");
+  const selectorImagen = document.getElementById("selectorImagen");
+  const sinopsis = document.getElementById("sinopsis");
+  const cuerpoTexto = document.getElementById("cuerpoTexto");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  function actualizarFechaTitulo(fechaStr) {
+    const fecha = new Date(fechaStr + 'T00:00:00');
+    const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+                   "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+    const texto = `${fecha.getDate()} DE ${meses[fecha.getMonth()]} DE ${fecha.getFullYear()}`;
+    fechaTexto.textContent = texto;
+  }
+
+  function cambiarDia(delta) {
+    const fechaActual = new Date(fechaInput.value + 'T00:00:00');
+    fechaActual.setDate(fechaActual.getDate() + delta);
+    const nuevaFecha = fechaActual.toISOString().split("T")[0];
+    fechaInput.value = nuevaFecha;
+    actualizarFechaTitulo(nuevaFecha);
+  }
+
+  window.onload = () => {
+    const hoy = new Date();
+    const fechaISO = hoy.toISOString().split("T")[0];
+    fechaInput.value = fechaISO;
+    actualizarFechaTitulo(fechaISO);
+  };
+
+  tituloInput.addEventListener("input", () => {
+    tituloTexto.textContent = tituloInput.value;
+  });
+
+  fechaInput.addEventListener("input", () => {
+    actualizarFechaTitulo(fechaInput.value);
+  });
+
+  selectorImagen.addEventListener("change", () => {
+    imagenSatelital.src = selectorImagen.value;
+  });
+
+  document.getElementById("botonExportar").addEventListener("click", () => {
+    const bg = new Image();
+    bg.src = "CAD.png";
+
+    const imgSat = new Image();
+    imgSat.crossOrigin = "anonymous";
+    imgSat.src = imagenSatelital.src;
+
+    bg.onload = () => {
+      ctx.drawImage(bg, 0, 0, 1280, 720);
+      ctx.font = "bold 36px Arial";
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.shadowColor = "black";
+      ctx.shadowBlur = 4;
+      ctx.fillText(tituloTexto.textContent, 640, 50);
+      ctx.font = "24px Arial";
+      ctx.fillText(fechaTexto.textContent, 640, 90);
+
+      imgSat.onload = () => {
+        ctx.shadowBlur = 0;
+        ctx.drawImage(imgSat, 40, 120, 560, imgSat.height * (560 / imgSat.width));
+
+        ctx.font = "18px Arial";
+        ctx.fillStyle = "black";
+        ctx.textAlign = "left";
+        let y = 150;
+        sinopsis.value.split('\n').forEach(p => {
+          let linea = '';
+          p.split(' ').forEach(palabra => {
+            const test = linea + palabra + ' ';
+            if (ctx.measureText(test).width > 520) {
+              ctx.fillText(linea, 700, y);
+              y += 24;
+              linea = palabra + ' ';
+            } else {
+              linea = test;
+            }
+          });
+          ctx.fillText(linea, 700, y);
+          y += 28;
+        });
+
+        cuerpoTexto.value.split('\n').forEach(p => {
+          let linea = '';
+          p.split(' ').forEach(palabra => {
+            const test = linea + palabra + ' ';
+            if (ctx.measureText(test).width > 520) {
+              ctx.fillText(linea, 700, y);
+              y += 22;
+              linea = palabra + ' ';
+            } else {
+              linea = test;
+            }
+          });
+          ctx.fillText(linea, 700, y);
+          y += 40;
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        document.getElementById("preview").src = imgData;
+
+        const link = document.createElement("a");
+        link.download = "boletin.png";
+        link.href = imgData;
+        link.click();
+      };
+    };
+  });
+</script>
+
+</body>
+</html>
