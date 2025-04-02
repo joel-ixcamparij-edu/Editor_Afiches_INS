@@ -209,7 +209,22 @@ Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrí
     imgSat.crossOrigin = "anonymous";
     imgSat.src = imagenSatelital.src;
 
+    let fondoListo = false;
+    let satelitalLista = false;
+
     bg.onload = () => {
+      fondoListo = true;
+      intentarDibujar();
+    };
+
+    imgSat.onload = () => {
+      satelitalLista = true;
+      intentarDibujar();
+    };
+
+    function intentarDibujar() {
+      if (!fondoListo || !satelitalLista) return;
+
       ctx.drawImage(bg, 0, 0, 1280, 720);
       ctx.font = "bold 36px Arial";
       ctx.fillStyle = "white";
@@ -220,55 +235,53 @@ Se recomienda tomar las precauciones necesarias. Las condiciones actuales podrí
       ctx.font = "24px Arial";
       ctx.fillText(fechaTexto.textContent, 640, 90);
 
-      imgSat.onload = () => {
-        ctx.shadowBlur = 0;
-        ctx.drawImage(imgSat, 40, 120, 560, imgSat.height * (560 / imgSat.width));
+      ctx.shadowBlur = 0;
+      ctx.drawImage(imgSat, 40, 120, 560, imgSat.height * (560 / imgSat.width));
 
-        ctx.font = "18px Arial";
-        ctx.fillStyle = "black";
-        ctx.textAlign = "left";
-        let y = 150;
-        sinopsis.value.split('\n').forEach(p => {
-          let linea = '';
-          p.split(' ').forEach(palabra => {
-            const test = linea + palabra + ' ';
-            if (ctx.measureText(test).width > 520) {
-              ctx.fillText(linea, 700, y);
-              y += 24;
-              linea = palabra + ' ';
-            } else {
-              linea = test;
-            }
-          });
-          ctx.fillText(linea, 700, y);
-          y += 28;
+      ctx.font = "18px Arial";
+      ctx.fillStyle = "black";
+      ctx.textAlign = "left";
+      let y = 150;
+      sinopsis.value.split('\n').forEach(p => {
+        let linea = '';
+        p.split(' ').forEach(palabra => {
+          const test = linea + palabra + ' ';
+          if (ctx.measureText(test).width > 520) {
+            ctx.fillText(linea, 700, y);
+            y += 24;
+            linea = palabra + ' ';
+          } else {
+            linea = test;
+          }
         });
+        ctx.fillText(linea, 700, y);
+        y += 28;
+      });
 
-        cuerpoTexto.value.split('\n').forEach(p => {
-          let linea = '';
-          p.split(' ').forEach(palabra => {
-            const test = linea + palabra + ' ';
-            if (ctx.measureText(test).width > 520) {
-              ctx.fillText(linea, 700, y);
-              y += 22;
-              linea = palabra + ' ';
-            } else {
-              linea = test;
-            }
-          });
-          ctx.fillText(linea, 700, y);
-          y += 40;
+      cuerpoTexto.value.split('\n').forEach(p => {
+        let linea = '';
+        p.split(' ').forEach(palabra => {
+          const test = linea + palabra + ' ';
+          if (ctx.measureText(test).width > 520) {
+            ctx.fillText(linea, 700, y);
+            y += 22;
+            linea = palabra + ' ';
+          } else {
+            linea = test;
+          }
         });
+        ctx.fillText(linea, 700, y);
+        y += 40;
+      });
 
-        const imgData = canvas.toDataURL("image/png");
-        document.getElementById("preview").src = imgData;
+      const imgData = canvas.toDataURL("image/png");
+      document.getElementById("preview").src = imgData;
 
-        const link = document.createElement("a");
-        link.download = "boletin.png";
-        link.href = imgData;
-        link.click();
-      };
-    };
+      const link = document.createElement("a");
+      link.download = "boletin.png";
+      link.href = imgData;
+      link.click();
+    }
   });
 </script>
 
